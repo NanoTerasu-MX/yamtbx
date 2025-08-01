@@ -545,7 +545,7 @@ class AOBA(JobManager):
         return status 
      # qstat()
 
-     def stop_all(self):
+    def stop_all(self):
         for i in list(self.job_id.values()):
             self.qdel(i)
     # stop_all()

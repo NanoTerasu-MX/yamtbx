@@ -510,7 +510,7 @@ class AOBA(JobManager):
 
      # submit()
 
-     def update_state(self, j):
+    def update_state(self, j):
         # if job_id is unknown (waiting or finished), state won't be changed
         if j in self.job_id:
             status = self.qstat(self.job_id[j])
@@ -518,7 +518,6 @@ class AOBA(JobManager):
             if status is None: # if qsub failed, flagged as FINISHED?
                 j.state = STATE_FINISHED
                 self.job_id.pop(j)
-
             else: # if sbatch succeeded, RUNNING or WAITING.
                 j.state = STATE_RUNNING
 

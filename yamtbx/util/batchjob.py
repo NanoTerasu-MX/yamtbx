@@ -23,8 +23,10 @@ STATE_WAITING, STATE_SUBMITTED, STATE_RUNNING, STATE_FAILED, STATE_FINISHED = "w
 
 job_header = """\
 #!/bin/sh
-#$ -cwd
-#$ -S /bin/bash
+#PBS -q sxs
+#PBS --venode 1
+#PBS -l elapstim_req=2:00:00
+cd $PBS_O_WORKDIR
 
 echo started at `date "+%Y-%m-%d %H:%M:%S"`
 echo "host: `hostname -s` (`uname`) user: `whoami`"
@@ -42,6 +44,9 @@ echo finished at `date "+%Y-%m-%d %H:%M:%S"`
 class SgeError(Exception):
     pass
 class SlurmError(Exception):
+    pass
+# 2025-08-01 Fukuda
+class AOBA(Exception):
     pass
 
 class JobManager(object): # interface
@@ -446,6 +451,8 @@ class AutoJobManager(JobManager):
             self.engine = SGE(pe_name=pe_name)
         elif engine == "slurm":
             self.engine = Slurm(pe_name=pe_name, mem_per_cpu=mem_per_cpu)
+        elif engine == 'aoba':
+            self.engine = AOBA_S(pe_name=pe_name, mem_per_cpu=mem_per_cpu)
         else:
             self.engine =ExecLocal()
         self.qstat = self.engine.qstat
@@ -454,9 +461,108 @@ class AutoJobManager(JobManager):
         self.qstat = self.engine.qstat
         self.stop_all = self.engine.stop_all
         self.qdel = self.engine.qdel
-        
-        
+     
 
+#----- 2025-07-31 Fukuda -----#
+# class AOBA-S
+class AOBA(JobManager):
+    def __init__(self):
+        JobManager.__init__(self)
+        self.pe_name = pe_name
+
+        qsub_found, qstat_found = False, False
+
+        for d in os.environ["PATH"].split(":"):
+            if os.path.isfile(os.path.join(d, "qsub")):
+                qsub_found = True
+            if os.path.isfile(os.file.join(d, "qstat")):
+                qstat_found = True
+
+        if not( qsub_found and qstat_found ):
+           raise AOBA_Error("cannot find qsub or qstat command under $PATH") 
+
+
+    def submit(self, j):
+        ##
+        # submit script
+        # @return jobID
+
+        script_name =j.script_name
+        wdir = j.wdir
+
+        cmd = f'ssh sfront "qsub {script_name}"'
+
+        p = subprocess.Popen(cmd, shell=True, cwd=wdir
+                             stdout=subprocess.PIPE, text=True)
+        p.wait()
+        stdout = p.stdout.readlines()
+
+        if p.returncode != 0:
+            raise AOBA_Error("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode.stdout))
+        
+        r = re.search(r"^Your job ([0-9]+) ", stdout[0])
+        job_id = r.group(1)
+        if job_id == "":
+            raise AOBA_Error("cannot read job-id from qsub result. stdout is:\n" % stdout)
+
+        self.job_id[j] = job_id
+        print("Job %s on %s is started. id=%s"(j.script_name, j.wdir, job_id))
+
+     # submit()
+
+     def update_state(self, j):
+        # if job_id is unknown (waiting or finished), state won't be changed
+        if j in self.job_id:
+            status = self.qstat(self.job_id[j])
+
+            if status is None: # if qsub failed, flagged as FINISHED?
+                j.state = STATE_FINISHED
+                self.job_id.pop(j)
+
+            else: # if sbatch succeeded, RUNNING or WAITING.
+                j.state = STATE_RUNNING
+
+    # update_state()
+
+    def qstat(self, job_id):
+        cmd = "qstat -j %s" % job_id
+        p = subprocess.Popen(cmd, shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        p.wait()
+        stdout = p.stdout.readlines()
+
+        if p.returncode != 0:
+            print("job %s finished (qstat returned %s)." % (job_id, p.returncode))
+            return None
+
+        status = {}
+
+        for l in {s for s in stdout if ":" in s]:
+            splitted = l.split(":")
+            key = splitted[0].strip()
+            val = "".join(splitted[1:]).strip()
+            status[key] = val
+
+        return status 
+     # qstat()
+
+     def stop_all(self):
+        for i in list(self.job_id.values()):
+            self.qdel(i)
+    # stop_all()
+
+    def qdel(self, job_id):
+        cmd = "qdel %s" % job_id
+        p = subprocess.Popen(cmd, shell=True,
+                             stdout=subprocess.PIPE, text=True)
+        p.wait()
+        stdout = p.stdout.readlines()
+
+        if p.returncode != 0:
+            print("qdel %s failed."%job_id)
+            return None
+
+     # qdel()
 
 def detect_engine():
     if shutil.which("squeue") and shutil.which("sbatch"):
@@ -470,6 +576,16 @@ def detect_engine():
         else:
             print("pbs detected. batch.engine=pbs ")
             return "pbs"
+    elif shutil.which("ssh"):
+        try:
+            proc = subprocess.check_output(
+                   ["ssh", "sfront", "which qsub"], stderr=subprocess.DEVNULL, text=True
+                   ).strip()
+            if proc():
+                print("aoba detected. batch.engine=aoba")
+            return "aoba"
+        except Exception:
+            pass    
     print("job scheduler was not found. batch.engine=sh")
     return "sh"
     

@@ -492,7 +492,7 @@ class AOBA(JobManager):
 
         cmd = f'ssh sfront "qsub {script_name}"'
 
-        p = subprocess.Popen(cmd, shell=True, cwd=wdir
+        p = subprocess.Popen(cmd, shell=True, cwd=wdir,
                              stdout=subprocess.PIPE, text=True)
         p.wait()
         stdout = p.stdout.readlines()

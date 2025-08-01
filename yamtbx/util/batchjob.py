@@ -536,7 +536,7 @@ class AOBA(JobManager):
 
         status = {}
 
-        for l in {s for s in stdout if ":" in s]:
+        for l in [s for s in stdout if ":" in s]:
             splitted = l.split(":")
             key = splitted[0].strip()
             val = "".join(splitted[1:]).strip()

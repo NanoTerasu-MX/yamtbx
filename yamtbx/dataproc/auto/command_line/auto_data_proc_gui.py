@@ -2049,7 +2049,7 @@ This is an alpha-version. If you found something wrong, please let staff know! W
             return
     elif config.params.batch.engine == "aoba":
         try:
-            batchjobs = batchjob.AOBA(pe_name=config.params.batch.aoba_pe_name)
+            batchjobs = batchjob.AOBA(pe_name="par")
         except batchjob.AobaError as e:
             mylog.error(str(e))
             mylog.error("AOBA not configured. If you want to run KAMO on your local computer only (not to use queueing system), please specify batch.engine=sh")

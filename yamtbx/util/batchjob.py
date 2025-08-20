@@ -490,10 +490,11 @@ class AOBA(JobManager):
         if p.returncode != 0:
             raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode,
                                                                             stdout))
-        pattern = r"Request\s+(\d+)\.job\s+submitted" 
-        r = re.search(pattern, stdout)
-        if not r:
+        pattern = r"request\s+(\d+)\.job\s+submitted" 
+        r = re.search(pattern, stdout, re.IGNORECASE)
+        if r is None:
             raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}")
+        
         job_id = r.group(1)
 
         self.job_id[j] = job_id

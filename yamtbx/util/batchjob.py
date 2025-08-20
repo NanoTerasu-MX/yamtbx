@@ -470,7 +470,7 @@ class AOBA(JobManager):
         JobManager.__init__(self)
         self.pe_name = pe_name
 
-        sel.qsub_found, self.qstat_found = True, True
+        self.qsub_found, self.qstat_found = True, True
 
     def submit(self, j):
         ##

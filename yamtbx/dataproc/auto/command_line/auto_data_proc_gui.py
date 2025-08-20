@@ -137,6 +137,10 @@ batch {
  sge_pe_name = par
   .type = str
   .help = pe name (put after -pe option)
+ # 2025-08-20 Fukuda
+ aoba_pe_name = par
+  .type = str
+  .help = pe name (put after -pe option)
  nproc_each = 4
   .type = int
   .help = maximum number of cores used for single data processing

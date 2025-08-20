@@ -485,14 +485,14 @@ class AOBA(JobManager):
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,
                              stdout=subprocess.PIPE, text=True)
         p.wait()
-        stdout, stderr = p.communicate()
+        stdout = p.stdout.readlines()
 
         if p.returncode != 0:
             raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode,
                                                                             stdout))
         pattern = r"Request\s+(\d+)\.job\s+submitted" 
         r = re.search(pattern, stdout)
-
+        job_id = r.group(1)
         self.job_id[j] = job_id
         print("Job %s on %s is started. id=%s"(j.script_name, j.wdir, job_id))
 
@@ -512,7 +512,7 @@ class AOBA(JobManager):
     # update_state()
 
     def qstat(self, job_id):
-        cmd = "qstat -j %s" % job_id
+        cmd = "/opt/nec/nqsv/bin/qstat -j %s" % job_id
         p = subprocess.Popen(cmd, shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         p.wait()

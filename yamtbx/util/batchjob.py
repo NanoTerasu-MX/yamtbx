@@ -485,7 +485,7 @@ class AOBA(JobManager):
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,
                              stdout=subprocess.PIPE, text=True)
         p.wait()
-        stdout = p.stdout.readlines()
+        stdout = p.stdout.read()
 
         if p.returncode != 0:
             raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode,

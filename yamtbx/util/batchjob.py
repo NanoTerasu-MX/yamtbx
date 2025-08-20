@@ -470,17 +470,7 @@ class AOBA(JobManager):
         JobManager.__init__(self)
         self.pe_name = pe_name
 
-        qsub_found, qstat_found = False, False
-
-        for d in os.environ["PATH"].split(":"):
-            if os.path.isfile(os.path.join(d, "qsub")):
-                qsub_found = True
-            if os.path.isfile(os.path.join(d, "qstat")):
-                qstat_found = True
-
-        if not( qsub_found and qstat_found ):
-           raise AobaError("cannot find qsub or qstat command under $PATH") 
-
+        sel.qsub_found, self.qstat_found = True, True
 
     def submit(self, j):
         ##

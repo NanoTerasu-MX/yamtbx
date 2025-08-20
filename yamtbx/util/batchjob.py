@@ -503,7 +503,7 @@ class AOBA(JobManager):
         r = re.search(r"^Your job ([0-9]+) ", stdout[0])
         job_id = r.group(1)
         if job_id == "":
-            raise AOBA_Error("cannot read job-id from qsub result. stdout is:\n" % stdout)
+            raise AobaError("cannot read job-id from qsub result. stdout is:\n" % stdout)
 
         self.job_id[j] = job_id
         print("Job %s on %s is started. id=%s"(j.script_name, j.wdir, job_id))

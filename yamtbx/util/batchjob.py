@@ -46,7 +46,7 @@ class SgeError(Exception):
 class SlurmError(Exception):
     pass
 # 2025-08-01 Fukuda
-class AOBA(Exception):
+class AobaError(Exception):
     pass
 
 class JobManager(object): # interface
@@ -575,6 +575,7 @@ def detect_engine():
         else:
             print("pbs detected. batch.engine=pbs ")
             return "pbs"
+    # 2025-08-01 Fukuda
     elif shutil.which("ssh"):
         try:
             proc = subprocess.check_output(

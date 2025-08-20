@@ -492,7 +492,7 @@ class AOBA(JobManager):
                                                                             stdout))
         pattern = r"Request\s+(\d+)\.job\s+submitted" 
         r = re.search(pattern, stdout)
-        if r;
+        if r:
             job_id = r.group(1)
         else:
             raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}") 

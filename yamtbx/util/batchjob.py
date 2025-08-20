@@ -488,7 +488,7 @@ class AOBA(JobManager):
         stdout, stderr = p.communicate()
 
         if p.returncode != 0:
-            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode, stdout, stderr))
+            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n" % (p.returncode, stdout, stderr))
         
         r = re.search(r"^Your job ([0-9]+) ", stdout[0])
         job_id = r.group(1)

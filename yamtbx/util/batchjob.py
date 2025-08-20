@@ -480,15 +480,15 @@ class AOBA(JobManager):
         script_name =j.script_name
         wdir = j.wdir
 
-        cmd = f'ssh sfront "qsub {script_name}"'
+        cmd = f'ssh sfront "/opt/nec/nqsv/bin/qsub {script_name}"'
 
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,
                              stdout=subprocess.PIPE, text=True)
         p.wait()
-        stdout = p.stdout.readlines()
+        stdout, stderr = p.communicate()
 
         if p.returncode != 0:
-            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode.stdout))
+            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode, stdout, stderr))
         
         r = re.search(r"^Your job ([0-9]+) ", stdout[0])
         job_id = r.group(1)

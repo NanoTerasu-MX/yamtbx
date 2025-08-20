@@ -485,16 +485,19 @@ class AOBA(JobManager):
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,
                              stdout=subprocess.PIPE, text=True)
         p.wait()
-        stdout = p.stdout.read()
+        stdout, stderr = p.communicate()
 
         if p.returncode != 0:
             raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode,
                                                                             stdout))
         pattern = r"Request\s+(\d+)\.job\s+submitted" 
         r = re.search(pattern, stdout)
+        if not r:
+            raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}")
         job_id = r.group(1)
+
         self.job_id[j] = job_id
-        print("Job %s on %s is started. id=%s"(j.script_name, j.wdir, job_id))
+        print(f"Job {j.script_name} on {j.wdir} is started. id={job_id}")
 
      # submit()
 

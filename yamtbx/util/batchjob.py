@@ -492,10 +492,6 @@ class AOBA(JobManager):
                                                                             stdout))
         pattern = r"Request\s+(\d+)\.job\s+submitted" 
         r = re.search(pattern, stdout)
-        if r:
-            job_id = r.group(1)
-        else:
-            raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}") 
 
         self.job_id[j] = job_id
         print("Job %s on %s is started. id=%s"(j.script_name, j.wdir, job_id))

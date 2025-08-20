@@ -475,7 +475,7 @@ class AOBA(JobManager):
         for d in os.environ["PATH"].split(":"):
             if os.path.isfile(os.path.join(d, "qsub")):
                 qsub_found = True
-            if os.path.isfile(os.file.join(d, "qstat")):
+            if os.path.isfile(os.path.join(d, "qstat")):
                 qstat_found = True
 
         if not( qsub_found and qstat_found ):

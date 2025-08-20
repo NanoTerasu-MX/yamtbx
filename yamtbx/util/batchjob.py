@@ -479,7 +479,7 @@ class AOBA(JobManager):
                 qstat_found = True
 
         if not( qsub_found and qstat_found ):
-           raise AOBA_Error("cannot find qsub or qstat command under $PATH") 
+           raise AobaError("cannot find qsub or qstat command under $PATH") 
 
 
     def submit(self, j):
@@ -498,7 +498,7 @@ class AOBA(JobManager):
         stdout = p.stdout.readlines()
 
         if p.returncode != 0:
-            raise AOBA_Error("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode.stdout))
+            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode.stdout))
         
         r = re.search(r"^Your job ([0-9]+) ", stdout[0])
         job_id = r.group(1)

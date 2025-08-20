@@ -466,8 +466,8 @@ class AutoJobManager(JobManager):
 #----- 2025-07-31 Fukuda -----#
 # class AOBA-S
 class AOBA(JobManager):
-    def __init__(self):
-        JobManager.__init__(self, pe_name="par")
+    def __init__(self, pe_name="par"):
+        JobManager.__init__(self)
         self.pe_name = pe_name
 
         qsub_found, qstat_found = False, False

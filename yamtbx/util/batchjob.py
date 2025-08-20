@@ -467,7 +467,7 @@ class AutoJobManager(JobManager):
 # class AOBA-S
 class AOBA(JobManager):
     def __init__(self):
-        JobManager.__init__(self)
+        JobManager.__init__(self, pe_name="par")
         self.pe_name = pe_name
 
         qsub_found, qstat_found = False, False

@@ -488,7 +488,10 @@ class AOBA(JobManager):
         stdout, stderr = p.communicate()
 
         if p.returncode != 0:
-            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n" % (p.returncode, stdout, stderr))
+            print(self.script_name, self.wdir)
+            print(os.path.exists(os.path.join(self.wdir, self.script_name)))
+            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode,
+                                                                            stdout))
         
         r = re.search(r"^Your job ([0-9]+) ", stdout[0])
         job_id = r.group(1)

@@ -471,6 +471,8 @@ class AOBA(JobManager):
         self.pe_name = pe_name
 
         self.qsub_found, self.qstat_found = True, True
+        
+        self.job_id = {} # [Job: jobid]
 
     def submit(self, j):
         ##

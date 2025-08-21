@@ -481,22 +481,28 @@ class AOBA(JobManager):
         wdir = j.wdir
 
         cmd = f'ssh sfront "/opt/nec/nqsv/bin/qsub {wdir}/{script_name}"'
+        print(f"[DEBUG] CMD: {cmd}")
 
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,
-                             stdout=subprocess.PIPE, text=True)
-        p.wait()
+                             stdout=subprocess.PIPE, 
+                             stderr=subprocess.PIPE,
+                             text=True)
+        #p.wait()
         stdout, stderr = p.communicate()
 
         if p.returncode != 0:
-            raise AobaError("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode,
-                                                                            stdout))
+            raise AobaError(
+                "qsub failed. returncode={}\nstdout:\n{}\nstderr:\n{}".format(
+                    p.returncode, stdout, stderr
+                    )
+                )
+
         pattern = r"[Rr]equest\s+(\d+)\.(?:job|sjob)\s+submitted"
         r = re.search(pattern, stdout, re.IGNORECASE)
         if r is None:
-            raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}")
+            raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}\nstderr:\n{stderr}")
         
         job_id = r.group(1)
-
         self.job_id[j] = job_id
         print(f"Job {j.script_name} on {j.wdir} is started. id={job_id}")
 

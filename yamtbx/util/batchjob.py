@@ -483,6 +483,7 @@ class AOBA(JobManager):
         cmd = (
             f'ssh sfront "while [ ! -d {wdir} ]; do sleep 1; done; '
             'cd {wdir} && /opt/nec/nqsv/bin/qsub {script_name}"'
+            )
         print(f"[DEBUG] CMD: {cmd}")
 
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,

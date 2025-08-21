@@ -480,7 +480,7 @@ class AOBA(JobManager):
         script_name =j.script_name
         wdir = j.wdir
 
-        cmd = f'ssh sfront "cd {wdir} && /opt/nec/nqsv/bin/qsub {script_name}"'
+        cmd = f'ssh sfront "ls /mnt/lustre/S3/a01768/mxdata/mxdata/mxstaff/Data/250727_BL09U/_kamoproc/ && cd {wdir} && /opt/nec/nqsv/bin/qsub {script_name}"'
         print(f"[DEBUG] CMD: {cmd}")
 
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,

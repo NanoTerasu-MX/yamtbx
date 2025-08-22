@@ -692,19 +692,14 @@ class BssJobs(object):
 
         # Start batch job
         # 2025-08-22 Fukuda
+        wd=os.path.abspath(workdir)
         job = batchjob.Job(workdir, "xds_auto.sh", nproc=config.params.batch.nproc_each)
-        job_str = """\
+        job_str = f"""\
+#!/bin/bash
 cd "%(wd)s" || exit 1
-"%(exe)s" - <<+
-from yamtbx.dataproc.auto.command_line.run_all_xds_simple import run_from_args
-run_from_args([%(args)s])
-for i in range(%(repeat)d-1):
- run_from_args([%(args)s, "mode=recycle"])
-+
-""" % dict(exe="/uhome/a01768/xtal/DIALS/dials-v3-22-1/conda_base/bin/python", args=",".join(['"%s"'%x for x in opts]),
-           repeat=config.params.xds.repeat,
-           wd=os.path.abspath(workdir))
-        
+xds_par
+"""
+
         job.write_script(job_str+"\n")
         
         batchjobs.submit(job)

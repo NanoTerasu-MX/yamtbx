@@ -701,7 +701,7 @@ run_from_args([%(args)s])
 for i in range(%(repeat)d-1):
  run_from_args([%(args)s, "mode=recycle"])
 +
-""" % dict(exe="/uhome/a01786/xtal/DIALS/dials-v3-22-1/conda_base/bin/python", args=",".join(['"%s"'%x for x in opts]),
+""" % dict(exe="~/xtal/DIALS/dials-v3-22-1/conda_base/bin/python", args=",".join(['"%s"'%x for x in opts]),
            repeat=config.params.xds.repeat,
            wd=os.path.abspath(workdir))
         

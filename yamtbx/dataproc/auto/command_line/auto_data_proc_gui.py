@@ -697,7 +697,7 @@ class BssJobs(object):
         job_str = f"""\
 #!/bin/bash
 cd "{wd}" || exit 1
-xds_par
+~/xtal/XDS/XDS2025-Tohoku/XDS-gfortran_Linux_x86_64/xds_par
 """
 
         job.write_script(job_str+"\n")

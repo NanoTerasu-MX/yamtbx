@@ -692,8 +692,8 @@ class BssJobs(object):
 
         # Start batch job
         # 2025-08-22 Fukuda
-        wd=os.path.abspath(workdir)
         job = batchjob.Job(workdir, "xds_auto.sh", nproc=config.params.batch.nproc_each)
+        wd=os.path.abspath(workdir)
         job_str = f"""\
 #!/bin/bash
 cd "%(wd)s" || exit 1

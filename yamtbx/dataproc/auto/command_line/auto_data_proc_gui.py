@@ -696,7 +696,7 @@ class BssJobs(object):
         wd=os.path.abspath(workdir)
         job_str = f"""\
 #!/bin/bash
-cd "%(wd)s" || exit 1
+cd "{wd}" || exit 1
 xds_par
 """
 

@@ -691,6 +691,7 @@ class BssJobs(object):
             opts.append("cell_prior.force=%s" % config.params.known.force)
 
         # Start batch job
+        # 2025-08-22 Fukuda
         job = batchjob.Job(workdir, "xds_auto.sh", nproc=config.params.batch.nproc_each)
         job_str = """\
 cd "%(wd)s" || exit 1
@@ -700,7 +701,7 @@ run_from_args([%(args)s])
 for i in range(%(repeat)d-1):
  run_from_args([%(args)s, "mode=recycle"])
 +
-""" % dict(exe=sys.executable, args=",".join(['"%s"'%x for x in opts]),
+""" % dict(exe=/uhome/a01786/xtal/DIALS/dials-v3-25-0/conda_base/bin/python, args=",".join(['"%s"'%x for x in opts]),
            repeat=config.params.xds.repeat,
            wd=os.path.abspath(workdir))
         

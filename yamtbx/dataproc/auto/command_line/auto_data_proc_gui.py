@@ -704,6 +704,15 @@ cd "{wd}" || exit 1
         
         batchjobs.submit(job)
         self.procjobs[key] = job
+
+        #
+        while job.state != STATE_FINISHED:
+            time.sleep(5)
+            batchjobs.update_state(job) 
+        
+        print(wd)
+        subprocess.run(f"rclone sync {wd} mxdata:{wd}", shell=True)
+
     # process_data_xds()
 
     def process_data_dials(self, key):

@@ -26,6 +26,7 @@ from yamtbx.dataproc.auto.command_line.multi_check_cell_consistency import CellG
 from yamtbx.util import batchjob, directory_included, read_path_list, safe_float, expand_wildcard_in_list
 from yamtbx.util.xtal import format_unit_cell
 
+
 import iotbx.phil
 import libtbx.phil
 from libtbx.utils import multi_out
@@ -706,7 +707,7 @@ cd "{wd}" || exit 1
         self.procjobs[key] = job
 
         #
-        while job.state != 4:
+        while job.state != bacthjob.STATE_FINISHED:
             time.sleep(5)
             batchjobs.update_state(job) 
         

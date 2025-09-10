@@ -698,7 +698,7 @@ class BssJobs(object):
         job_str = f"""\
 #!/bin/bash
 cd "{wd}" || exit 1
-/mnt/lustre/uhome/a01768//xtal/XDS/XDS2025-Tohoku/XDS-gfortran_Linux_x86_64/xds_par
+/mnt/lustre/uhome/a01768/xtal/XDS/XDS2025-Tohoku/XDS-gfortran_Linux_x86_64/xds_par
 """
 
         job.write_script(job_str+"\n")
@@ -706,13 +706,6 @@ cd "{wd}" || exit 1
         batchjobs.submit(job)
         self.procjobs[key] = job
 
-        #
-        while job.state != batchjob.STATE_FINISHED:
-            time.sleep(5)
-            batchjobs.update_state(job) 
-        
-        print(wd)
-        subprocess.run(f"rclone sync {wd} aoba:{wd}", shell=True)
 
     # process_data_xds()
 

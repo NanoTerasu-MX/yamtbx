@@ -711,7 +711,7 @@ cd "{wd}" || exit 1
             batchjobs.update_state(job) 
         
         print(wd)
-        subprocess.run(f"rclone sync {wd} mxdata:{wd}", shell=True)
+        subprocess.run(f"rclone sync {wd} aoba:{wd}", shell=True)
 
     # process_data_xds()
 

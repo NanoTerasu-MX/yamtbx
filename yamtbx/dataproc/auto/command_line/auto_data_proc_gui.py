@@ -132,9 +132,13 @@ small_wedges = true
  .help = Optimized for small wedge data processing
 
 batch {
- engine = sge pbs slurm sh *auto
+ engine = sge pbs slurm sh aoba *auto
   .type = choice(multi=False)
  sge_pe_name = par
+  .type = str
+  .help = pe name (put after -pe option)
+ # 2025-08-20 Fukuda
+ aoba_pe_name = par
   .type = str
   .help = pe name (put after -pe option)
  nproc_each = 4
@@ -687,23 +691,28 @@ class BssJobs(object):
             opts.append("cell_prior.force=%s" % config.params.known.force)
 
         # Start batch job
+        # 2025-08-22 Fukuda
         job = batchjob.Job(workdir, "xds_auto.sh", nproc=config.params.batch.nproc_each)
-        job_str = """\
-cd "%(wd)s" || exit 1
-"%(exe)s" - <<+
-from yamtbx.dataproc.auto.command_line.run_all_xds_simple import run_from_args
-run_from_args([%(args)s])
-for i in range(%(repeat)d-1):
- run_from_args([%(args)s, "mode=recycle"])
-+
-""" % dict(exe=sys.executable, args=",".join(['"%s"'%x for x in opts]),
-           repeat=config.params.xds.repeat,
-           wd=os.path.abspath(workdir))
-        
+        wd=os.path.abspath(workdir)
+        job_str = f"""\
+#!/bin/bash
+cd "{wd}" || exit 1
+/mnt/lustre/uhome/a01768//xtal/XDS/XDS2025-Tohoku/XDS-gfortran_Linux_x86_64/xds_par
+"""
+
         job.write_script(job_str+"\n")
         
         batchjobs.submit(job)
         self.procjobs[key] = job
+
+        #
+        while job.state != STATE_FINISHED:
+            time.sleep(5)
+            batchjobs.update_state(job) 
+        
+        print(wd)
+        subprocess.run(f"rclone sync {wd} mxdata:{wd}", shell=True)
+
     # process_data_xds()
 
     def process_data_dials(self, key):
@@ -2043,7 +2052,13 @@ This is an alpha-version. If you found something wrong, please let staff know! W
             mylog.error(str(e))
             mylog.error("Slurm not configured. If you want to run KAMO on your local computer only (not to use queueing system), please specify batch.engine=sh")
             return
-
+    elif config.params.batch.engine == "aoba":
+        try:
+            batchjobs = batchjob.AOBA(pe_name="par")
+        except batchjob.AobaError as e:
+            mylog.error(str(e))
+            mylog.error("AOBA not configured. If you want to run KAMO on your local computer only (not to use queueing system), please specify batch.engine=sh")
+            return
     elif config.params.batch.engine == "sh":
         if config.params.batch.sh_max_jobs == libtbx.Auto:
             nproc_all = libtbx.easy_mp.get_processes(None)

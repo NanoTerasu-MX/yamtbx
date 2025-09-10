@@ -706,7 +706,7 @@ cd "{wd}" || exit 1
         self.procjobs[key] = job
 
         #
-        while job.state != STATE_FINISHED:
+        while job.state != 4:
             time.sleep(5)
             batchjobs.update_state(job) 
         

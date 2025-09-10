@@ -535,6 +535,8 @@ class AOBA(JobManager):
         stdout = p.stdout.readlines()
 
         if p.returncode != 0:
+            if "Batch Job does not exist" in stdout or p.returncode == 127:
+                return None
             print("job %s finished (qstat returned %s)." % (job_id, p.returncode))
             return None
 

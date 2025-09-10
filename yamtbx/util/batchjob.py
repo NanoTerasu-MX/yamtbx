@@ -222,7 +222,7 @@ class SGE(JobManager):
     # update_state()
 
     def qstat(self, job_id):
-        cmd = "qstat -J %s" % job_id
+        cmd = "qstat -j %s" % job_id
         p = subprocess.Popen(cmd, shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         p.wait()
@@ -231,6 +231,8 @@ class SGE(JobManager):
         if p.returncode != 0:
             print("job %s finished (qstat returned %s)." % (job_id, p.returncode))
             return None
+        #raise SgeError("qstat failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode,
+        #                                                                     stdout))
 
         status = {}
 
@@ -526,7 +528,7 @@ class AOBA(JobManager):
     # update_state()
 
     def qstat(self, job_id):
-        cmd = "/opt/nec/nqsv/bin/qstat -j %s" % job_id
+        cmd = "/opt/nec/nqsv/bin/qstat -J %s" % job_id
         p = subprocess.Popen(cmd, shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         p.wait()

@@ -486,7 +486,9 @@ class AOBA(JobManager):
             f'ssh sfront "while [ ! -d {wdir} ] || [ ! -f {wdir}/{script_name} ]; do sleep 1; done; '
             f'cd {wdir} && /opt/nec/nqsv/bin/qsub {script_name}"'
             )
-        print(f"[DEBUG] CMD: {cmd}")
+        if os.path.isfile(os.path.join(wdir, script_name));
+            print(f'{script_name} exists')
+
         print(f"[DEBUG] CMD: {cmd}")
 
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,

@@ -46,7 +46,7 @@ class SgeError(Exception):
 class SlurmError(Exception):
     pass
 # 2025-08-01 Fukuda
-class AOBA(Exception):
+class AobaError(Exception):
     pass
 
 class JobManager(object): # interface
@@ -439,7 +439,7 @@ class Job(object):
         script = job_header + env + script_text + job_footer 
         
         open(os.path.join(self.wdir, self.script_name), "w").write(script)
-        os.chmod(os.path.join(self.wdir, self.script_name) , stat.S_IXUSR + stat.S_IWUSR + stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH)
+        os.chmod(os.path.join(self.wdir, self.script_name) , stat.S_IXUSR + stat.S_IWUSR + stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH + stat.S_IXUSR)
         print("job_file=", os.path.join(self.wdir, self.script_name))
     # write_script()
 
@@ -466,21 +466,13 @@ class AutoJobManager(JobManager):
 #----- 2025-07-31 Fukuda -----#
 # class AOBA-S
 class AOBA(JobManager):
-    def __init__(self):
+    def __init__(self, pe_name="par"):
         JobManager.__init__(self)
         self.pe_name = pe_name
 
-        qsub_found, qstat_found = False, False
-
-        for d in os.environ["PATH"].split(":"):
-            if os.path.isfile(os.path.join(d, "qsub")):
-                qsub_found = True
-            if os.path.isfile(os.file.join(d, "qstat")):
-                qstat_found = True
-
-        if not( qsub_found and qstat_found ):
-           raise AOBA_Error("cannot find qsub or qstat command under $PATH") 
-
+        self.qsub_found, self.qstat_found = True, True
+        
+        self.job_id = {} # [Job: jobid]
 
     def submit(self, j):
         ##
@@ -490,27 +482,41 @@ class AOBA(JobManager):
         script_name =j.script_name
         wdir = j.wdir
 
-        cmd = f'ssh sfront "qsub {script_name}"'
+        cmd = (
+            f'ssh sfront "while [ ! -d {wdir} ] || [ ! -f {wdir}/{script_name} ]; do sleep 1; done; '
+            f'cd {wdir} && /opt/nec/nqsv/bin/qsub {script_name}"'
+            )
+        if os.path.isfile(os.path.join(wdir, script_name));
+            print(f'{script_name} exists')
+
+        print(f"[DEBUG] CMD: {cmd}")
 
         p = subprocess.Popen(cmd, shell=True, cwd=wdir,
-                             stdout=subprocess.PIPE, text=True)
-        p.wait()
-        stdout = p.stdout.readlines()
+                             stdout=subprocess.PIPE, 
+                             stderr=subprocess.PIPE,
+                             text=True)
+        #p.wait()
+        stdout, stderr = p.communicate()
 
         if p.returncode != 0:
-            raise AOBA_Error("qsub failed. returncode is %d.\nstdout:\n%s\n"%(p.returncode.stdout))
-        
-        r = re.search(r"^Your job ([0-9]+) ", stdout[0])
-        job_id = r.group(1)
-        if job_id == "":
-            raise AOBA_Error("cannot read job-id from qsub result. stdout is:\n" % stdout)
+            raise AobaError(
+                "qsub failed. returncode={}\nstdout:\n{}\nstderr:\n{}".format(
+                    p.returncode, stdout, stderr
+                    )
+                )
 
+        pattern = r"[Rr]equest\s+(\d+)\.(?:job|sjob)\s+submitted"
+        r = re.search(pattern, stdout, re.IGNORECASE)
+        if r is None:
+            raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}\nstderr:\n{stderr}")
+        
+        job_id = r.group(1)
         self.job_id[j] = job_id
-        print("Job %s on %s is started. id=%s"(j.script_name, j.wdir, job_id))
+        print(f"Job {j.script_name} on {j.wdir} is started. id={job_id}")
 
      # submit()
 
-     def update_state(self, j):
+    def update_state(self, j):
         # if job_id is unknown (waiting or finished), state won't be changed
         if j in self.job_id:
             status = self.qstat(self.job_id[j])
@@ -518,26 +524,27 @@ class AOBA(JobManager):
             if status is None: # if qsub failed, flagged as FINISHED?
                 j.state = STATE_FINISHED
                 self.job_id.pop(j)
-
             else: # if sbatch succeeded, RUNNING or WAITING.
                 j.state = STATE_RUNNING
 
     # update_state()
 
     def qstat(self, job_id):
-        cmd = "qstat -j %s" % job_id
+        cmd = "/opt/nec/nqsv/bin/qstat -J %s" % job_id
         p = subprocess.Popen(cmd, shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         p.wait()
         stdout = p.stdout.readlines()
 
         if p.returncode != 0:
+            if "Batch Job does not exist" in stdout or p.returncode == 127:
+                return None
             print("job %s finished (qstat returned %s)." % (job_id, p.returncode))
             return None
 
         status = {}
 
-        for l in {s for s in stdout if ":" in s]:
+        for l in [s for s in stdout if ":" in s]:
             splitted = l.split(":")
             key = splitted[0].strip()
             val = "".join(splitted[1:]).strip()
@@ -546,7 +553,7 @@ class AOBA(JobManager):
         return status 
      # qstat()
 
-     def stop_all(self):
+    def stop_all(self):
         for i in list(self.job_id.values()):
             self.qdel(i)
     # stop_all()
@@ -576,6 +583,7 @@ def detect_engine():
         else:
             print("pbs detected. batch.engine=pbs ")
             return "pbs"
+    # 2025-08-01 Fukuda
     elif shutil.which("ssh"):
         try:
             proc = subprocess.check_output(

@@ -483,6 +483,114 @@ class AOBA(JobManager):
         wdir = j.wdir
 
         cmd = (
+            f'ssh sfront "while [ ! -d {wdir} ] || [ ! -f {wdir}/{script_name} ]; do sleep 1; done; '
+            f'cd {wdir} && /opt/nec/nqsv/bin/qsub {script_name}"'
+            )
+        if os.path.isfile(os.path.join(wdir, script_name)):
+            print(f'{script_name} exists')
+
+        print(f"[DEBUG] CMD: {cmd}")
+
+        p = subprocess.Popen(cmd, shell=True, cwd=wdir,
+                             stdout=subprocess.PIPE, 
+                             stderr=subprocess.PIPE,
+                             text=True)
+        #p.wait()
+        stdout, stderr = p.communicate()
+
+        if p.returncode != 0:
+            raise AobaError(
+                "qsub failed. returncode={}\nstdout:\n{}\nstderr:\n{}".format(
+                    p.returncode, stdout, stderr
+                    )
+                )
+
+        pattern = r"[Rr]equest\s+(\d+)\.(?:job|sjob)\s+submitted"
+        r = re.search(pattern, stdout, re.IGNORECASE)
+        if r is None:
+            raise AobaError(f"Failed to parse job_id from qsub output:\n{stdout}\nstderr:\n{stderr}")
+        
+        job_id = r.group(1)
+        self.job_id[j] = job_id
+        print(f"Job {j.script_name} on {j.wdir} is started. id={job_id}")
+
+     # submit()
+
+    def update_state(self, j):
+        # if job_id is unknown (waiting or finished), state won't be changed
+        if j in self.job_id:
+            status = self.qstat(self.job_id[j])
+
+            if status is None: # if qsub failed, flagged as FINISHED?
+                j.state = STATE_FINISHED
+                self.job_id.pop(j)
+            else: # if sbatch succeeded, RUNNING or WAITING.
+                j.state = STATE_RUNNING
+
+    # update_state()
+
+    def qstat(self, job_id):
+        cmd = "/opt/nec/nqsv/bin/qstat -J %s" % job_id
+        p = subprocess.Popen(cmd, shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        p.wait()
+        stdout = p.stdout.readlines()
+
+        if p.returncode != 0:
+            if "Batch Job does not exist" in stdout or p.returncode == 127:
+                return None
+            print("job %s finished (qstat returned %s)." % (job_id, p.returncode))
+            return None
+
+        status = {}
+
+        for l in [s for s in stdout if ":" in s]:
+            splitted = l.split(":")
+            key = splitted[0].strip()
+            val = "".join(splitted[1:]).strip()
+            status[key] = val
+
+        return status 
+     # qstat()
+
+    def stop_all(self):
+        for i in list(self.job_id.values()):
+            self.qdel(i)
+    # stop_all()
+
+    def qdel(self, job_id):
+        cmd = "qdel %s" % job_id
+        p = subprocess.Popen(cmd, shell=True,
+                             stdout=subprocess.PIPE, text=True)
+        p.wait()
+        stdout = p.stdout.readlines()
+
+        if p.returncode != 0:
+            print("qdel %s failed."%job_id)
+            return None
+
+     # qdel()
+
+#----- 2026-02-12 Fukuda -----#
+# class AOBA-S for local_aoba
+class LOCALAOBA(JobManager):
+    def __init__(self, pe_name="par"):
+        JobManager.__init__(self)
+        self.pe_name = pe_name
+
+        self.qsub_found, self.qstat_found = True, True
+        
+        self.job_id = {} # [Job: jobid]
+
+    def submit(self, j):
+        ##
+        # submit script
+        # @return jobID
+
+        script_name =j.script_name
+        wdir = j.wdir
+
+        cmd = (
             f'qsub {script_name}'
             )
         if os.path.isfile(os.path.join(wdir, script_name)):
@@ -570,15 +678,20 @@ class AOBA(JobManager):
 
      # qdel()
 
+# 2026-02-12 updated by Fukuda
 def detect_engine():
+    qstat_path = shutil.which("qstat")
     if shutil.which("squeue") and shutil.which("sbatch"):
         print("slurm detected. batch.engine=slurm")
         return "slurm"
-    elif shutil.which("qstat"):
+    elif qstat_path:
         proc = subprocess.check_output(["qstat", "-help"], stderr=subprocess.PIPE)
         if " -pe " in proc:
             print("sge detected. batch.engine=sge ")
             return "sge"
+        elif "/opt/nec/nqsv/bin/qstat" in qstat_path:
+            print("local_aoba detected. batch.engine=local_aoba ")
+            return "local_aoba"
         else:
             print("pbs detected. batch.engine=pbs ")
             return "pbs"

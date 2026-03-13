@@ -142,6 +142,9 @@ batch {
  aoba_pe_name = par
   .type = str
   .help = pe name (put after -pe option)
+ aoba_mode = local, ssh
+  .type = choice(multi=False)
+  .help = "AOBA execution mode. local: run directly; ssh: run via sfront."
  nproc_each = 4
   .type = int
   .help = maximum number of cores used for single data processing
@@ -2054,13 +2057,22 @@ This is an alpha-version. If you found something wrong, please let staff know! W
             mylog.error(str(e))
             mylog.error("Slurm not configured. If you want to run KAMO on your local computer only (not to use queueing system), please specify batch.engine=sh")
             return
+    #----- 2026-03-13 updated by Fukuda -----#
     elif config.params.batch.engine == "aoba":
-        try:
-            batchjobs = batchjob.AOBA(pe_name="par")
-        except batchjob.AobaError as e:
-            mylog.error(str(e))
-            mylog.error("AOBA not configured. If you want to run KAMO on your local computer only (not to use queueing system), please specify batch.engine=sh")
+        if config.params.batch.aoba_mode == "local":
+            try:
+                batchjobs = batchjob.AOBA(pe_name="par", is_local=True)
+            except batchjob.AobaError as e:
+                mylog.error(str(e))
+                mylog.error("AOBA not configured. If you want to run KAMO on your local computer only (not to use queueing system), please specify batch.engine=sh")
+        else:
+            try:
+                batchjobs = batchjob.AOBA(pe_name="par", is_local=False)
+            except batchjob.AobaError as e:
+                mylog.error(str(e))
+                mylog.error("AOBA not configured. If you want to run KAMO on your local computer only (not to use queueing system), please specify batch.engine=sh")
             return
+    #----- 2026-03-13 updated by Fukuda -----#
     elif config.params.batch.engine == "sh":
         if config.params.batch.sh_max_jobs == libtbx.Auto:
             nproc_all = libtbx.easy_mp.get_processes(None)

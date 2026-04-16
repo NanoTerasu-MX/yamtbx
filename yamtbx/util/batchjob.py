@@ -439,7 +439,7 @@ class Job(object):
         script = job_header + env + script_text + job_footer 
         
         open(os.path.join(self.wdir, self.script_name), "w").write(script)
-        os.chmod(os.path.join(self.wdir, self.script_name) , stat.S_IXUSR + stat.S_IWUSR + stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH + stat.S_IXUSR)
+        os.chmod(os.path.join(self.wdir, self.script_name), stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
         print("job_file=", os.path.join(self.wdir, self.script_name))
     # write_script()
 

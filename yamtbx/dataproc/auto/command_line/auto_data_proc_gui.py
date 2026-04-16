@@ -142,7 +142,7 @@ batch {
  aoba_pe_name = par
   .type = str
   .help = pe name (put after -pe option)
- aoba_mode = local, ssh
+ aoba_mode = *local ssh
   .type = choice(multi=False)
   .help = "AOBA execution mode. local: run directly; ssh: run via sfront."
  nproc_each = 4

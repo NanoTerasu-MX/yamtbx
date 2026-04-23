@@ -772,13 +772,22 @@ created on %s
             lattp = lpobj.first_subtree_fraction()*100.
 
         lp = bssjobs._load_if_chached("correctlp", correct_lp)
+        # 2026-04-23 modified by Fukuda: fallback to read CORRECT.LP directly if cache is empty
+        # (fixes nan in report.html on first run with AOBA engine due to file sync delay)
+        if lp is None and os.path.isfile(correct_lp):
+            lp = correctlp.CorrectLp(correct_lp)
+            bssjobs._save_chache("correctlp", correct_lp, lp)
         if lp is not None:
             ISa = lp.get_ISa() if lp.is_ISa_valid() else float("nan")
             sg = lp.space_group_str()
             cmpl = float(lp.table["all"]["cmpl"][-1]) if "all" in lp.table else float("nan")
-        
+
         resn = bssjobs._load_if_chached("resn", correct_lp)
         if resn is None: resn = bssjobs._load_if_chached("resn", spot_xds)
+        # 2026-04-23 modified by Fukuda: fallback to compute resn from lp if cache is empty
+        if resn is None and lp is not None:
+            resn = lp.resolution_based_on_ios_of_error_table(min_ios=1.)
+            bssjobs._save_chache("resn", correct_lp, resn)
         if resn is None: resn = float("nan")
 
         tmp = '<tr>\n <td><a href="%s">%s</a></td> <td>%s</td> <td>%.4f</td> <td>%.1f</td> <td>%.3f</td> <td>%.1f</td> <td>%s</td> <td>%.1f</td> <td>%.0f</td> <td>%.2f</td>  <td>%s</td>\n</tr>\n' % (indiv_html, dsname, sampleid, wavelen, totalphi, deltaphi, lattp, sg,
